@@ -7,14 +7,16 @@ from collections import defaultdict
 from itertools import combinations
 
 # Visualization libraries
+from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Math and data manipulation libraries
 import pandas as pd
 import networkx as nx
+import numpy as np
 
-PAGE_DIR = "S:\Logseq\Home Graph\pages"
+PAGE_DIR = r"S:\Logseq\Home Graph\pages"
 EXCLUDE_FILES = [ # files to exclude from search
     "templates.md",
     "README.md",
@@ -40,18 +42,19 @@ extract_terps = (
 
 
 class Terpene: # class to store terpene data
-    def __init__(self, name: str, score: float, position: int, position_limit: int):
+    def __init__(self, name: str, score: float, position: int, position_limit: int, strain: str = ""):
         self.name = name
         self.score = score
         self.position = position
         self.position_limit = position_limit
+        self.strain = strain
 
     def __repr__(self) -> str:
         return f"{self.name}: {self.score}, weight {self.position}/{self.position_limit}"
 
-def find_terp_data(path: str) -> list[Terpene]:
+def find_terp_data(path: str) -> tuple[list[Terpene], list]:
     terp_data = list() # list of terpene data instances
-    strain_terpenes = list() # list of terpene data for each strain
+    terp_co_occurrences = list() # list of terpene data for each strain
 
     for filename in os.listdir(path):
         if filename.endswith(".md") and filename not in EXCLUDE_FILES:
@@ -59,6 +62,8 @@ def find_terp_data(path: str) -> list[Terpene]:
             with open(filepath, "r", encoding="utf-8") as file:
                 no_score = False # flag to skip terp extraction if no score is found
                 for line in file:
+                    strain_name = filename[:-3] # extract strain name from filename
+
                     if line.startswith("score::"):
                         str_strain_score = line.split("::")[1].strip() # extract score
                         if str_strain_score == "": # if no score is found, skip terp extraction
@@ -71,16 +76,21 @@ def find_terp_data(path: str) -> list[Terpene]:
                             terp.strip() for terp in extract_terps(line)
                         ]  # [terp1, terp2, ...]
                         for i, terp in enumerate(terps): # add terpene data to list if terp is not "" or "?"
-                            if terp != "" and terp != "?": terp_data.append(Terpene(terp, strain_score, i + 1, len(terps)))
+                            if terp != "" and terp != "?": terp_data.append(Terpene(terp, strain_score, i + 1, len(terps), filename[:-3]))
 
-                        if "?" not in terps: strain_terpenes.append(terps) # add terp data to strain_terpenes list
+                        # add terps to terp_co_occurrences list
+                        if "?" not in terps: 
+                            terp_co_occurrences.append(terps)
 
-    # print terpene data to console
-    print("Data points:")
+    print("\nUnique terpenes:")
+    for terp in set(terp.name for terp in terp_data):
+        print(terp)
+
+    print("\nData points:")
     for terp in terp_data:
         print(terp)
 
-    return terp_data, strain_terpenes
+    return terp_data, terp_co_occurrences
 
 def weighted_score_average(terp_data: list[Terpene]) -> dict[str, float]:
     # Initialize a defaultdict to store the scores, positions, and position_limits for each terpene name
@@ -111,7 +121,12 @@ def weighted_score_average(terp_data: list[Terpene]) -> dict[str, float]:
     return weighted_avg_scores
 
 
-def create_graph(terp_data: list, terp_scores: dict, strain_terpenes: list[tuple]):
+def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrences: list[tuple]):
+    # Create a figure with two rows and two columns
+    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(
+        nrows=2, ncols=2, figsize=(12, 8), gridspec_kw={"width_ratios": [2, 1]}
+    )
+
     # Extract unique terpenes
     unique_terps = set(terp.name for terp in terp_data)
 
@@ -128,11 +143,6 @@ def create_graph(terp_data: list, terp_scores: dict, strain_terpenes: list[tuple
     box_plot_df['Mean_Score'] = box_plot_df['Terpene'].map(terp_scores)
     box_plot_df = box_plot_df.sort_values(by='Mean_Score')
 
-    # Create a figure with two rows and two columns
-    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(
-        nrows=2, ncols=2, figsize=(12, 8), gridspec_kw={"width_ratios": [2, 1]}
-    )
-
     # Box-and-whisker plot for terpene scores with clustered data points
     sns.boxplot(x='Terpene', y='Score', data=box_plot_df, ax=ax1, color=pastel_colors[0])
     sns.stripplot(x='Terpene', y='Score', data=box_plot_df, ax=ax1, color=pastel_colors[1], jitter=True, size=5)
@@ -146,20 +156,9 @@ def create_graph(terp_data: list, terp_scores: dict, strain_terpenes: list[tuple
     ax2.set_ylabel("Frequency")
     ax2.set_title("Terpene Frequencies", color=pastel_colors[2])
 
-    # Display raw terpene data
-    ax3.axis("off")
-    raw_data = [terp.__repr__() for terp in terp_data]
-    combined_text = ""
-    for i, line in enumerate(raw_data):
-        combined_text += f"{i}: {line}\n"
-    ax3.text(
-        0, 1, combined_text, va="top", ha="left", fontfamily="monospace", color=pastel_colors[4],
-    )
-    ax3.set_title("Raw Data Points", color=pastel_colors[2])
-
     # Create a network graph of terpene co-occurrences
     G = nx.Graph()
-    for strain_terps in strain_terpenes:
+    for strain_terps in terp_co_occurrences:
         G.add_nodes_from(strain_terps)
         for terp1, terp2 in combinations(strain_terps, 2):
             G.add_edge(terp1, terp2)
@@ -174,11 +173,11 @@ def create_graph(terp_data: list, terp_scores: dict, strain_terpenes: list[tuple
     fig.set_facecolor(bgColor)
     plt.gca().set_facecolor(bgColor)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
 
 
 if __name__ == "__main__":
-    terp_data, strain_terpenes = find_terp_data(PAGE_DIR)
+    terp_data, terp_co_occurrences = find_terp_data(PAGE_DIR)
     terp_scores = weighted_score_average(terp_data)
-    create_graph(terp_data, terp_scores, strain_terpenes)
+    create_graph(terp_data, terp_scores, terp_co_occurrences)
