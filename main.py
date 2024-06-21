@@ -17,7 +17,7 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 
-PAGE_DIR = r"S:\Logseq\Home Graph\pages"
+PAGE_DIR = r"/storage/Logseq/Home Graph/pages/"
 EXCLUDE_FILES = [ # files to exclude from search
     "templates.md",
     "README.md",
@@ -139,6 +139,10 @@ def weighted_score_average(terp_data: list[Terpene]) -> dict[str, float]:
     return weighted_avg_scores
 
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
 def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrences: list[tuple], dates: list):
     # Create a figure with two rows and two columns
     fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(
@@ -178,30 +182,29 @@ def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrence
 
     # Display a list of terpenes with their mean scores
     ax3.bar(sorted_terps, [terp_scores[terp] for terp in sorted_terps], color=pastel_colors[0])
-    ax3.set_xticklabels(ax3.get_xticklabels(), rotation=45, ha="right")
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation=20, ha="right")
     ax3.set_ylim(min(terp_scores.values()) - 0.1, max(terp_scores.values()) + 0.1)
     ax3.set_ylabel("Mean Score")
     ax3.set_title("Mean Scores", color=pastel_colors[2])
 
-    # Create a network graph of terpene co-occurrences
-    G = nx.Graph()
-    for strain_terps in terp_co_occurrences:
-        G.add_nodes_from(strain_terps)
-        for terp1, terp2 in combinations(strain_terps, 2):
-            G.add_edge(terp1, terp2)
+    # Create a list of raw data points for each terpene
+    raw_data_strings = []
+    for terp in sorted_terps:
+        scores = [t.score for t in terp_data if t.name == terp]
+        score_str = ", ".join(f"{score:.1f}" for score in scores)
+        raw_data_strings.append(f"{terp}: {score_str}")
 
-    pos = nx.spring_layout(G)
-    nx.draw(G, pos, ax=ax4, node_color=pastel_colors[1], with_labels=False, edge_color=pastel_colors[0])
-    node_labels = nx.draw_networkx_labels(G, pos, font_color=pastel_colors[4], font_size=8, ax=ax4, verticalalignment='bottom')
-    for node, (x, y) in pos.items():
-        node_labels[node].set_position((x, y + 0.08))  # Adjust the value 0.05 as needed to increase the offset
-    ax4.set_title("Terpene Co-occurrence Network", color=pastel_colors[2])
+    # Display the raw data points in ax4
+    ax4.axis('off')
+    ax4.set_title("Raw Data Points", color=pastel_colors[2])
+    for i, data_str in enumerate(raw_data_strings):
+        ax4.text(0.01, 0.99 - i * 0.05, data_str, va='top', ha='left', color=pastel_colors[4])
 
     fig.set_facecolor(bgColor)
     plt.gca().set_facecolor(bgColor)
 
-    # plt.tight_layout()
     plt.show()
+
 
 
 if __name__ == "__main__":
