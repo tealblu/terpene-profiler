@@ -110,7 +110,7 @@ def weighted_score_average(terp_data: list[Terpene]) -> dict[str, float]:
     return weighted_avg_scores
 
 def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrences: list[tuple], dates: list):
-    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(12, 8), gridspec_kw={"width_ratios": [2, 1]})
+    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(nrows=2, ncols=2, figsize=(15, 10), gridspec_kw={"width_ratios": [2, 1]})
 
     unique_terps = set(terp.name for terp in terp_data)
     frequencies = {terp: sum(1 for t in terp_data if t.name == terp) for terp in unique_terps}
@@ -122,7 +122,7 @@ def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrence
     box_plot_df['Mean_Score'] = box_plot_df['Terpene'].map(terp_scores)
     box_plot_df = box_plot_df.sort_values(by='Mean_Score')
 
-    sns.violinplot(x='Terpene', y='Score', data=box_plot_df, ax=ax1, color=pastel_colors[0])
+    sns.violinplot(x='Terpene', y='Score', data=box_plot_df, ax=ax1, color=pastel_colors[0], bw=0.5, scale='width')
     ax1.set_xlabel("Terpene")
     ax1.set_ylabel("Score")
     ax1.set_title("Score Distribution", color=pastel_colors[2])
@@ -170,6 +170,7 @@ def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrence
     fig.set_facecolor(bgColor)
     plt.gca().set_facecolor(bgColor)
     plt.show()
+
 
 if __name__ == "__main__":
     terp_data, terp_co_occurrences, dates = find_terp_data(PAGE_DIR)
