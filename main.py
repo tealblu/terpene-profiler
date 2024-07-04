@@ -149,12 +149,12 @@ def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrence
     ax3.set_title("Mean Scores", color=pastel_colors[2])
 
     raw_data_strings = []
-    for terp in sorted_terps:
-        scores = [t.score for t in terp_data if t.name == terp]
-        score_str = ", ".join(f"{score:.1f}" for score in scores)
-        raw_data_strings.append(f"{terp}: {score_str}")
-
-    raw_data_strings.append("")
+    # for terp in sorted_terps:
+    #     scores = [t.score for t in terp_data if t.name == terp]
+    #     score_str = ", ".join(f"{score:.1f}" for score in scores)
+    #     raw_data_strings.append(f"{terp}: {score_str}")
+    # 
+    # raw_data_strings.append("")
 
     strain_avg_scores = {}
     for strain in strain_scores.keys():
