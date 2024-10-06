@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-PAGE_DIR = r"/storage/Logseq/Home Graph/pages/"
+PAGE_DIR = r"/mnt/storage/Logseq/Home Graph/pages/"
 EXCLUDE_FILES = ["templates.md", "README.md", "index.md"]
 
 sns.set_style("dark")
@@ -14,7 +14,13 @@ plt.style.use("dark_background")
 bgColor = "#383838"
 plt.rcParams["axes.facecolor"] = bgColor
 plt.rcParams["figure.facecolor"] = bgColor
-pastel_colors = ["#C2AFF0", "#9191E9", "#D6F8D6", "#7FC6A4", "#f79b6a"]
+pastel_colors = {
+    "lavender": "#C2AFF0",
+    "indigo": "#4747a6",
+    "mint": "#d6f8d6",
+    "teal": "#519675",
+    "orange": "#f79b6a"
+}
 
 def extract_terps(line):
     return line.strip().split("::")[1].split(",")
@@ -129,24 +135,24 @@ def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrence
     box_plot_df['Terpene'] = pd.Categorical(box_plot_df['Terpene'], categories=sorted_terps, ordered=True)
     box_plot_df = box_plot_df.sort_values('Terpene')
 
-    sns.violinplot(x='Terpene', y='Score', data=box_plot_df, ax=ax1, color=pastel_colors[0], bw_adjust=0.5, density_norm='width')
+    sns.violinplot(x='Terpene', y='Score', data=box_plot_df, ax=ax1, color=pastel_colors["lavender"], bw_adjust=0.5, density_norm='width')
     ax1.set_xlabel("Terpene")
     ax1.set_ylabel("Score")
-    ax1.set_title("Score Distribution", color=pastel_colors[2])
+    ax1.set_title("Score Distribution", color=pastel_colors["mint"])
 
-    sns.barplot(x=sorted_terps, y=sorted_frequencies, ax=ax2, color=pastel_colors[0])
+    sns.barplot(x=sorted_terps, y=sorted_frequencies, ax=ax2, color=pastel_colors["lavender"])
     for i, freq in enumerate(sorted_frequencies):
-        ax2.axhline(freq, color=pastel_colors[0], linestyle="--", alpha=0.1)
+        ax2.axhline(freq, color=pastel_colors["lavender"], linestyle="--", alpha=0.1)
     ax2.set_xlabel("Terpene")
     ax2.set_ylabel("Frequency")
-    ax2.set_title("Terpene Frequencies", color=pastel_colors[2])
+    ax2.set_title("Terpene Frequencies", color=pastel_colors["mint"])
 
-    ax3.bar(sorted_terps, [terp_scores[terp] for terp in sorted_terps], color=pastel_colors[0])
+    ax3.bar(sorted_terps, [terp_scores[terp] for terp in sorted_terps], color=pastel_colors["lavender"])
     ax3.set_xticks(range(len(sorted_terps)))  # Explicitly set the ticks
     ax3.set_xticklabels(sorted_terps, rotation=20, ha="right")
     ax3.set_ylim(min(terp_scores.values()) - 0.1, max(terp_scores.values()) + 0.1)
     ax3.set_ylabel("Mean Score")
-    ax3.set_title("Mean Scores", color=pastel_colors[2])
+    ax3.set_title("Mean Scores", color=pastel_colors["mint"])
 
     raw_data_strings = []
     # for terp in sorted_terps:
@@ -170,9 +176,9 @@ def create_graph(terp_data: list[Terpene], terp_scores: dict, terp_co_occurrence
             raw_data_strings.append(f"{strain} ({strain_avg_scores[strain]}): {' '.join(terp for terp in strain_terps[strain])}")
 
     ax4.axis('off')
-    ax4.set_title("Raw Data Points", color=pastel_colors[2])
+    ax4.set_title("Raw Data Points", color=pastel_colors["mint"])
     for i, data_str in enumerate(raw_data_strings):
-        ax4.text(0.01, 0.99 - i * 0.05, data_str, va='top', ha='left', color=pastel_colors[4])
+        ax4.text(0.01, 0.99 - i * 0.05, data_str, va='top', ha='left', color=pastel_colors["orange"])
 
     fig.set_facecolor(bgColor)
     plt.gca().set_facecolor(bgColor)
